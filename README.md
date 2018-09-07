@@ -1,0 +1,2 @@
+# NewscatBOT
+Bot for Newscat
