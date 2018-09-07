@@ -19,13 +19,13 @@ printf "${ijo}
 "
 printf "${kuning}	_________________________________________________________________${NC}\n\n"
 rm award.tmp aid.txt info.tmp 2> /dev/null
-printf "${kuning}[!]${NC} Masukan Token Newscat Anda: "; read token
+printf "${kuning}[!]${NC} Insert Your Newscat Token: "; read token
 printf "${kuning}[!]${NC} Checking Token..."
-checktoken=$(curl -s -d "token=$token" "http://www.newscat.com/api/user/info" -o "info.tmp")
+checktoken=$(curl -s -d "token=$token" 'http://www.newscat.com/api/user/info' -o "info.tmp")
 getok=$(cat info.tmp | grep -Po '(?<=message":")[^"]*')
 getid=$(cat info.tmp | grep -Po '(?<=id":")[^"]*')
-gold=$(cat info.tmp | grep -Po '(?<="gold":[^,]*')
-	if [[ $getok == "OK" ]]
+gold=$(cat info.tmp | grep -Po '(?<="gold":)[^,]*')
+if [[ $getok == "OK" ]]
 		then
 			printf "${ijo}Done${NC}\n"
 			printf "${ijo}[!]${NC} Token : OK\n"
@@ -34,12 +34,14 @@ gold=$(cat info.tmp | grep -Po '(?<="gold":[^,]*')
 		else
 			printf "${merah}Failed${NC}\n"
 			printf "${merah}[!]${NC} Token : Error\n"
-				exit
-	fi
-printf "${kuning}[!]$[NC} Getting News ID.."
-getnews=$(curl "http://www.newscat.com/api/article/list?page=1&category=hot&version=1.3.0" -m 60 | grep -Po '(?<="aid":")[^"]*' >> aid.txt )
+				exit 0
+fi
+rm info.tmp 2> /dev/null
+printf "${kuning}[!]${NC} Getting News ID.."
+pages=$(shuf -i 1-5604 -n 1)
+getnews=$(curl -s "http://www.newscat.com/api/article/list?page=$pages" -m 60 | grep -Po '(?<="aid":")[^"]*' > aid.txt )
 getnewsok=$(cat aid.txt | sed -n 1p)
-	if [[ $getnewsok == "" ]]
+	if [[ $getnewsok == '' ]]
 		then
 			printf "${merah}Failed${NC}\n"
 			exit
@@ -49,18 +51,19 @@ getnewsok=$(cat aid.txt | sed -n 1p)
 printf "${kuning}[!]${NC} Starting Bot..\n"
 botstart(){
 rm award.tmp 2> /dev/null
-bot=$(curl -s -d "token=$token&aid=$aid" "http://www.newscat.com/api/article/award" -o "award.tmp")
+bot=$(curl -s -X POST -d "token=$token&aid=$aid" 'http://www.newscat.com/api/article/award' -o 'award.tmp')
 getmessage=$(cat award.tmp | grep -Po '(?<=message":")[^"]*')
 getgold=$(cat award.tmp | grep -Po '(?<=gold":")[^"]*')
 getreward=$(cat award.tmp | grep -Po '(?<=award":)[^,]*')
-if [[ $getmessage == "OK" ]]
+if [[ $getmessage == 'OK' ]]
 	then
-		printf "${ijo}[!]${NC} [ID : $aid ] [Gold : $getgold] [Reward : $getreward] [${ijo}Success]\n"
+		printf "${ijo}[!]${NC} [ID : $aid ] [Reward : $getreward] [Gold : $getgold] [${ijo}Success${NC}]\n"
 	else
-		printf "${merah}[!]${NC} [ID : $aid ] [Gold : $getgold] [Reward : 0] [${merah}Failed]\n"
+printf "${merah}[!]${NC} [ID : $aid ] [Reward : $getreward] [Reward : 0] [${merah}Failed${NC}]\n"
 fi
 }
 for aid in $(cat aid.txt)
 do
 botstart
+sleep 3
 done
